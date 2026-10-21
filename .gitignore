@@ -42,6 +42,12 @@ qtcreator-*
 /planning/docs
 /planning/src
 
+# ROS 2 workspace and editor-generated files
+install/
+log/
+.vscode/*.db
+.vscode/*.db-*
+
 *~
 
 # Emacs
