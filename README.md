@@ -8,7 +8,8 @@
 
 - 已选用 TurtleBot3 Burger 作为仿真底盘。
 - `patrol_sim_bringup` 提供项目自己的模型显示和 Gazebo 仿真入口。
-- 后续步骤：验证仿真话题与 TF，然后开展 SLAM 建图和 Nav2 导航。
+- SLAM Toolbox 在线异步建图入口与 Burger 参数已加入。
+- 后续步骤：在可运行 Gazebo 的环境中验收地图，再进入 Nav2 定位与导航。
 
 ## 环境依赖
 
@@ -31,14 +32,13 @@ source install/setup.zsh
 ## 启动 Gazebo 仿真
 
 ```bash
-export TURTLEBOT3_MODEL=burger
 ros2 launch patrol_sim_bringup simulation.launch.py
 ```
 
-该启动文件调用 TurtleBot3 官方 `turtlebot3_world.launch.py`，默认将机器人放置在 `x=-2.0, y=-0.5`。可以用 `x_pose` 和 `y_pose` 覆盖初始位置：
+项目启动文件会默认选择 Burger，并调用 TurtleBot3 官方 `turtlebot3_world.launch.py`，默认将机器人放置在 `x=-2.0, y=-0.5`。可以用 `model`、`x_pose` 和 `y_pose` 覆盖模型与初始位置：
 
 ```bash
-ros2 launch patrol_sim_bringup simulation.launch.py x_pose:=0.0 y_pose:=0.0
+ros2 launch patrol_sim_bringup simulation.launch.py model:=burger x_pose:=0.0 y_pose:=0.0
 ```
 
 ## 单独查看机器人模型
@@ -68,4 +68,34 @@ ros2 topic echo /odom --once
 ros2 run tf2_ros tf2_echo odom base_link
 ```
 
-确认 `/scan`、`/odom`、`/clock` 和 `odom -> base_link` 正常后，再进入 SLAM 建图步骤。
+确认 `/scan`、`/odom`、`/clock` 和 `odom -> base_link` 正常后，再启动下方的 SLAM 建图流程。
+
+## SLAM 建图
+
+先在一个终端启动 Gazebo 仿真。在第二个终端启动在线异步建图：
+
+```bash
+source /opt/ros/humble/setup.zsh
+source install/setup.zsh
+ros2 launch patrol_sim_bringup slam.launch.py
+```
+
+第三个终端启动键盘遥控，然后缓慢驾驶机器人探索环境；尽量覆盖走廊和房间，并适当回到已走过的区域形成闭环：
+
+```bash
+source /opt/ros/humble/setup.zsh
+source install/setup.zsh
+ros2 run turtlebot3_teleop teleop_keyboard
+```
+
+RViz 中应逐渐出现 `/map` 栅格地图，激光点云应与地图墙面基本重合。建图完成后在工作区根目录保存地图：
+
+```bash
+ros2 run nav2_map_server map_saver_cli -f src/patrol_sim_bringup/maps/patrol_map
+```
+
+命令成功后应生成 `patrol_map.yaml` 和 `patrol_map.pgm`。只有地图保存成功且几何轮廓合理，才算完成本阶段。
+
+如果 Gazebo 中没有机器人，先检查仿真终端是否出现 `Spawn status: Successfully spawned entity`。若没有，检查 `ros2 service list | rg spawn_entity` 是否能看到 `/spawn_entity`，并确认 Gazebo server 没有提前退出。
+
+RViz 报 `Frame [map] does not exist` 表示 SLAM 尚未发布 `map` 坐标系。确认仿真中的 `/scan`、`/odom` 有数据，且 `ros2 run tf2_ros tf2_echo odom base_footprint` 能持续输出后，再查看 `slam_toolbox` 终端是否报告等待 TF 或扫描数据。

@@ -1,5 +1,9 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    SetEnvironmentVariable,
+)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
@@ -15,6 +19,11 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument(
+                "model",
+                default_value="burger",
+                description="TurtleBot3 model to spawn.",
+            ),
+            DeclareLaunchArgument(
                 "x_pose",
                 default_value="-2.0",
                 description="Initial robot x position in the world.",
@@ -24,6 +33,8 @@ def generate_launch_description():
                 default_value="-0.5",
                 description="Initial robot y position in the world.",
             ),
+            # 官方 TurtleBot3 launch 在生成机器人前会读取此环境变量。
+            SetEnvironmentVariable("TURTLEBOT3_MODEL", LaunchConfiguration("model")),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(upstream_launch),
                 # Gazebo 和节点统一使用仿真时钟，初始位置可由上层参数覆盖。
