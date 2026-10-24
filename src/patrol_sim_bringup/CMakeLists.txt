@@ -8,4 +8,9 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(
+  PROGRAMS scripts/initial_pose_publisher.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_package()

@@ -111,7 +111,20 @@ source install/setup.zsh
 ros2 launch patrol_sim_bringup navigation.launch.py
 ```
 
-等待 Nav2 生命周期节点启动后，在 RViz 中使用 **2D Pose Estimate** 设置机器人初始位置和朝向。AMCL 粒子云应收敛到机器人周围，TF 中应出现 `map -> odom -> base_footprint`。
+Nav2 启动后，项目会等待 AMCL 生命周期进入 active，再自动向 `/initialpose` 发布三次初始位姿。当前仿真固定出生点为 `x=-2.0, y=-0.5, yaw=0`，自动初始化默认使用这组地图坐标。地图文件本身不记录机器人出生位姿；如果修改 Gazebo 出生点或重新制作地图，需要确认机器人在地图中的实际坐标并同步调整初始位姿参数。AMCL 粒子云应收敛到机器人周围，TF 中应出现 `map -> odom -> base_footprint`。
+
+如果地图中的初始位置与默认值不同，可覆盖地图坐标；朝向角使用弧度，例如朝向 90 度：
+
+```bash
+ros2 launch patrol_sim_bringup navigation.launch.py \
+  initial_pose_x:=-2.0 initial_pose_y:=-0.5 initial_pose_yaw:=1.5708
+```
+
+需要手动校正时，可以关闭自动初始化，再在 RViz 中使用 **2D Pose Estimate**：
+
+```bash
+ros2 launch patrol_sim_bringup navigation.launch.py auto_initialize_pose:=false
+```
 
 定位稳定后使用 **Nav2 Goal** 在已知空闲区域设置目标。验收要求：规划路径出现在地图上，机器人沿路径移动并到达目标，期间 `/odom`、`/scan` 和 `/cmd_vel` 数据持续正常。无图形界面排查时可传入 `use_rviz:=false`。
 
