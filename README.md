@@ -9,7 +9,8 @@
 - 已选用 TurtleBot3 Burger 作为仿真底盘。
 - `patrol_sim_bringup` 提供项目自己的模型显示和 Gazebo 仿真入口。
 - SLAM Toolbox 在线异步建图入口与 Burger 参数已加入。
-- 后续步骤：在可运行 Gazebo 的环境中验收地图，再进入 Nav2 定位与导航。
+- 已加入基于保存地图的 Nav2 启动入口，准备验证 AMCL 定位与目标点导航。
+- 后续步骤：通过连续导航和动态障碍物测试调整 Nav2 参数，再实现巡逻点任务。
 
 ## 环境依赖
 
@@ -99,3 +100,25 @@ ros2 run nav2_map_server map_saver_cli -f src/patrol_sim_bringup/maps/patrol_map
 如果 Gazebo 中没有机器人，先检查仿真终端是否出现 `Spawn status: Successfully spawned entity`。若没有，检查 `ros2 service list | rg spawn_entity` 是否能看到 `/spawn_entity`，并确认 Gazebo server 没有提前退出。
 
 RViz 报 `Frame [map] does not exist` 表示 SLAM 尚未发布 `map` 坐标系。确认仿真中的 `/scan`、`/odom` 有数据，且 `ros2 run tf2_ros tf2_echo odom base_footprint` 能持续输出后，再查看 `slam_toolbox` 终端是否报告等待 TF 或扫描数据。
+
+## Nav2 定位与导航
+
+先关闭 SLAM 建图和遥控节点，保留 Gazebo 仿真运行。新开终端启动 Nav2；默认使用本仓库保存的地图及 TurtleBot3 Humble Burger 参数：
+
+```bash
+source /opt/ros/humble/setup.zsh
+source install/setup.zsh
+ros2 launch patrol_sim_bringup navigation.launch.py
+```
+
+等待 Nav2 生命周期节点启动后，在 RViz 中使用 **2D Pose Estimate** 设置机器人初始位置和朝向。AMCL 粒子云应收敛到机器人周围，TF 中应出现 `map -> odom -> base_footprint`。
+
+定位稳定后使用 **Nav2 Goal** 在已知空闲区域设置目标。验收要求：规划路径出现在地图上，机器人沿路径移动并到达目标，期间 `/odom`、`/scan` 和 `/cmd_vel` 数据持续正常。无图形界面排查时可传入 `use_rviz:=false`。
+
+如果需要使用另一份地图或调整 Nav2 参数，可以覆盖启动参数：
+
+```bash
+ros2 launch patrol_sim_bringup navigation.launch.py \
+  map:=/绝对路径/其他地图.yaml \
+  params_file:=/绝对路径/nav2参数.yaml
+```
