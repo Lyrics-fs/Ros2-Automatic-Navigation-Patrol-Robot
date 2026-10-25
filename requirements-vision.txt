@@ -1,0 +1,5 @@
+# 保持 NumPy 1.x，以兼容 ROS 2 Humble 的 cv_bridge。
+numpy>=1.23.5,<2
+ultralytics>=8.3,<9
+# colcon-core 0.21.x 要求 setuptools 小于 80。
+setuptools>=30.3.0,<80

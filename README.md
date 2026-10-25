@@ -8,6 +8,7 @@
 
 - 已选用 TurtleBot3 Burger 作为仿真底盘，并为仿真添加 RGB 相机。
 - `patrol_sim_bringup` 提供项目自己的模型显示和 Gazebo 仿真入口。
+- `patrol_vision` 提供基于 YOLO11n 的相机目标检测入口。
 - SLAM Toolbox 在线异步建图入口与 Burger 参数已加入。
 - 已加入基于保存地图的 Nav2 启动入口，准备验证 AMCL 定位与目标点导航。
 - 后续步骤：通过连续导航和动态障碍物测试调整 Nav2 参数，再实现巡逻点任务。
@@ -60,6 +61,75 @@ ros2 run tf2_ros tf2_echo base_link camera_optical_frame
 图像应持续发布，分辨率为 640×480，目标频率约 15 Hz；`/camera/camera_info` 应包含相机内参，图像和相机参数的 `header.frame_id` 应为 `camera_optical_frame`。可在 RViz 中添加 **Image** 显示，话题选择 `/camera/image_raw` 检查画面。Gazebo 的相机画面可能受渲染负载影响，实际频率低于目标值时先确认图像是否持续更新。
 
 若终端提示 `gzserver` 退出或等待 `/spawn_entity` 超时，先排查 Gazebo 启动问题；这时不会有相机话题。使用 ROS 2 时还需退出 Miniconda 的 `(base)` 环境，避免 ROS 脚本使用缺少系统依赖的 Conda Python。
+
+## YOLO 图像识别
+
+项目使用 Ultralytics YOLO11n 进行通用目标检测。先安装系统 Python 的虚拟环境支持包；如果系统已经安装 `python3.10-venv`，可以跳过第一条命令：
+
+```bash
+sudo apt install python3.10-venv
+cd /home/lyrics/Ros2-Automatic-Navigation-Patrol-Robot
+conda deactivate  # 直到终端前缀不再显示 (base)
+/usr/bin/python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements-vision.txt
+```
+
+如果此前安装过新版 `setuptools`，先执行下面的降级命令，避免与 `colcon-core` 冲突：
+
+```bash
+python -m pip install "setuptools>=30.3.0,<80"
+```
+
+如果视觉虚拟环境已经安装过 `setuptools 84.x`，建议先执行降级，再重新安装视觉依赖：
+
+```bash
+python -m pip install --force-reinstall "setuptools>=30.3.0,<80"
+python -m pip install -r requirements-vision.txt
+```
+
+安装完成后，重新构建工作区并启动仿真：
+
+```bash
+source /opt/ros/humble/setup.zsh
+colcon build --symlink-install
+source install/setup.zsh
+ROS_LOG_DIR=/tmp/patrol_ros2_log ros2 launch patrol_sim_bringup simulation.launch.py
+```
+
+在另一个终端使用同样的环境启动检测节点。第一次运行会下载 `yolo11n.pt`；模型文件会被 `.gitignore` 忽略：
+
+```bash
+cd /home/lyrics/Ros2-Automatic-Navigation-Patrol-Robot
+source .venv/bin/activate
+source /opt/ros/humble/setup.zsh
+source install/setup.zsh
+ROS_LOG_DIR=/tmp/patrol_ros2_log ros2 launch patrol_vision yolo.launch.py
+```
+
+检测节点默认订阅 `/camera/image_raw`，发布以下话题：
+
+```text
+/perception/image_annotated   带检测框的图像
+/perception/detections        JSON 格式的检测结果
+```
+
+检查识别结果：
+
+```bash
+ros2 topic hz /perception/image_annotated
+ros2 topic echo /perception/detections
+```
+
+默认参数为 CPU、`416` 输入尺寸、`0.35` 置信度阈值和约 3 Hz 推理。可以按机器性能调整：
+
+```bash
+ros2 launch patrol_vision yolo.launch.py \
+  confidence_threshold:=0.45 image_size:=320 inference_hz:=2.0
+```
+
+可以在 RViz 添加 **Image** 显示并选择 `/perception/image_annotated` 查看检测框。当前模型是 COCO 通用预训练模型，适合先验证人、椅子、瓶子等常见类别；识别火焰、烟雾、垃圾或项目自定义目标时，需要后续准备数据并微调模型。
 
 ## 单独查看机器人模型
 

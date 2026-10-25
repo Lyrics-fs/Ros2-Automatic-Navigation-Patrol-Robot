@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>patrol_vision</name>
+  <version>0.1.0</version>
+  <description>基于 YOLO 的巡逻机器人图像目标检测节点。</description>
+  <maintainer email="lyrics@example.com">Lyrics</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

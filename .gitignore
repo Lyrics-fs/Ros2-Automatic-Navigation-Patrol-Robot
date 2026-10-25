@@ -45,6 +45,8 @@ qtcreator-*
 # ROS 2 workspace and editor-generated files
 install/
 log/
+.venv/
+*.pt
 .vscode/*.db
 .vscode/*.db-*
 
