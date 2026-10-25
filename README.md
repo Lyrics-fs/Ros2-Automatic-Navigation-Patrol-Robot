@@ -6,7 +6,7 @@
 
 ## 当前进度
 
-- 已选用 TurtleBot3 Burger 作为仿真底盘。
+- 已选用 TurtleBot3 Burger 作为仿真底盘，并为仿真添加 RGB 相机。
 - `patrol_sim_bringup` 提供项目自己的模型显示和 Gazebo 仿真入口。
 - SLAM Toolbox 在线异步建图入口与 Burger 参数已加入。
 - 已加入基于保存地图的 Nav2 启动入口，准备验证 AMCL 定位与目标点导航。
@@ -36,11 +36,30 @@ source install/setup.zsh
 ros2 launch patrol_sim_bringup simulation.launch.py
 ```
 
-项目启动文件会默认选择 Burger，并调用 TurtleBot3 官方 `turtlebot3_world.launch.py`，默认将机器人放置在 `x=-2.0, y=-0.5`。可以用 `model`、`x_pose` 和 `y_pose` 覆盖模型与初始位置：
+项目启动文件默认选择 Burger，并沿用官方世界、机器人模型和运动插件；启动时会给 Burger 添加 RGB 相机。机器人默认放置在 `x=-2.0, y=-0.5`。可以用 `model`、`x_pose` 和 `y_pose` 覆盖模型与初始位置：
 
 ```bash
 ros2 launch patrol_sim_bringup simulation.launch.py model:=burger x_pose:=0.0 y_pose:=0.0
 ```
+
+如需按原方式启动没有相机的 Burger，可以传入 `use_camera:=false`。其他 TurtleBot3 型号仍使用官方启动文件。
+
+### RGB 相机验收
+
+仿真启动终端出现“已生成带 RGB 相机的 Burger 机器人”后，在另一个终端检查图像、相机参数和 TF：
+
+```bash
+source /opt/ros/humble/setup.zsh
+source install/setup.zsh
+ros2 topic info /camera/image_raw
+ros2 topic hz /camera/image_raw
+ros2 topic echo /camera/camera_info --once
+ros2 run tf2_ros tf2_echo base_link camera_optical_frame
+```
+
+图像应持续发布，分辨率为 640×480，目标频率约 15 Hz；`/camera/camera_info` 应包含相机内参，图像和相机参数的 `header.frame_id` 应为 `camera_optical_frame`。可在 RViz 中添加 **Image** 显示，话题选择 `/camera/image_raw` 检查画面。Gazebo 的相机画面可能受渲染负载影响，实际频率低于目标值时先确认图像是否持续更新。
+
+若终端提示 `gzserver` 退出或等待 `/spawn_entity` 超时，先排查 Gazebo 启动问题；这时不会有相机话题。使用 ROS 2 时还需退出 Miniconda 的 `(base)` 环境，避免 ROS 脚本使用缺少系统依赖的 Conda Python。
 
 ## 单独查看机器人模型
 

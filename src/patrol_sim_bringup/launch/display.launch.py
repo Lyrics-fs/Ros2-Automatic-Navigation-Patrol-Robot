@@ -21,12 +21,12 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "model",
                 default_value="burger",
-                description="TurtleBot3 model name.",
+                description="TurtleBot3 模型名称。",
             ),
             DeclareLaunchArgument(
                 "use_rviz",
                 default_value="true",
-                description="Start RViz for visual inspection.",
+                description="启动 RViz 查看机器人模型。",
             ),
             Node(
                 package="robot_state_publisher",

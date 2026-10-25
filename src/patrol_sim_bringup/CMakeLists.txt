@@ -9,7 +9,7 @@ install(
 )
 
 install(
-  PROGRAMS scripts/initial_pose_publisher.py
+  PROGRAMS scripts/initial_pose_publisher.py scripts/spawn_burger_camera.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

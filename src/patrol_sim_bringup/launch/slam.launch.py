@@ -19,19 +19,19 @@ def generate_launch_description():
                 default_value=PathJoinSubstitution(
                     [package_share, "config", "slam_toolbox.yaml"]
                 ),
-                description="SLAM Toolbox parameter file.",
+                description="SLAM Toolbox 参数文件。",
             ),
             DeclareLaunchArgument(
                 "use_sim_time",
                 default_value="true",
-                description="Use Gazebo simulation time.",
+                description="使用 Gazebo 仿真时间。",
             ),
             DeclareLaunchArgument(
                 "use_rviz",
                 default_value="true",
-                description="Start RViz with the mapping view.",
+                description="启动 RViz 并加载建图视图。",
             ),
-            # SLAM Toolbox publishes map -> odom while Gazebo provides odom -> base_footprint.
+            # SLAM Toolbox 发布 map -> odom，Gazebo 提供 odom -> base_footprint。
             Node(
                 package="slam_toolbox",
                 executable="async_slam_toolbox_node",

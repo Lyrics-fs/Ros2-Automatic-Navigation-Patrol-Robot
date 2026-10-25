@@ -2,13 +2,15 @@
 <package format="3">
   <name>patrol_sim_bringup</name>
   <version>0.1.0</version>
-  <description>Project launch entry points for the upstream TurtleBot3 Burger simulation.</description>
+  <description>基于官方 TurtleBot3 Burger 仿真的项目启动入口。</description>
   <maintainer email="lyrics@example.com">Lyrics</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <exec_depend>ament_index_python</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>gazebo_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>joint_state_publisher</exec_depend>
   <exec_depend>launch</exec_depend>

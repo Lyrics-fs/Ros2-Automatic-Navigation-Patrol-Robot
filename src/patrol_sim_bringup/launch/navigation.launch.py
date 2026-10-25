@@ -29,51 +29,51 @@ def generate_launch_description():
                 default_value=PathJoinSubstitution(
                     [project_share, "maps", "patrol_map.yaml"]
                 ),
-                description="Saved occupancy grid YAML file.",
+                description="已保存的栅格地图 YAML 文件。",
             ),
             DeclareLaunchArgument(
                 "params_file",
                 default_value=PathJoinSubstitution(
                     [turtlebot_nav_share, "param", "humble", "burger.yaml"]
                 ),
-                description="TurtleBot3 Burger Nav2 parameters for Humble.",
+                description="适用于 Humble 的 TurtleBot3 Burger Nav2 参数文件。",
             ),
             DeclareLaunchArgument(
                 "use_sim_time",
                 default_value="true",
-                description="Use Gazebo simulation time.",
+                description="使用 Gazebo 仿真时间。",
             ),
             DeclareLaunchArgument(
                 "autostart",
                 default_value="true",
-                description="Automatically activate Nav2 lifecycle nodes.",
+                description="自动激活 Nav2 生命周期节点。",
             ),
             DeclareLaunchArgument(
                 "use_rviz",
                 default_value="true",
-                description="Start the Nav2 RViz interface.",
+                description="启动 Nav2 的 RViz 界面。",
             ),
             DeclareLaunchArgument(
                 "auto_initialize_pose",
                 default_value="true",
-                description="Publish the initial AMCL pose after AMCL becomes active.",
+                description="AMCL 激活后发布初始位姿。",
             ),
             DeclareLaunchArgument(
                 "initial_pose_x",
                 default_value="-2.0",
-                description="Initial robot x position in the map frame.",
+                description="机器人在 map 坐标系中的初始 x 坐标。",
             ),
             DeclareLaunchArgument(
                 "initial_pose_y",
                 default_value="-0.5",
-                description="Initial robot y position in the map frame.",
+                description="机器人在 map 坐标系中的初始 y 坐标。",
             ),
             DeclareLaunchArgument(
                 "initial_pose_yaw",
                 default_value="0.0",
-                description="Initial robot yaw in radians in the map frame.",
+                description="机器人在 map 坐标系中的初始偏航角，单位为弧度。",
             ),
-            # Use Nav2's standard bringup for map_server, AMCL, planner and controller.
+            # 使用 Nav2 标准启动文件加载地图服务、AMCL、规划器和控制器。
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution([nav2_share, "launch", "bringup_launch.py"])
@@ -86,7 +86,7 @@ def generate_launch_description():
                     "use_composition": "False",
                 }.items(),
             ),
-            # Wait for AMCL's lifecycle state before sending the pose to avoid a startup race.
+            # 等待 AMCL 生命周期节点激活后再发送位姿，避免启动时序冲突。
             Node(
                 package="patrol_sim_bringup",
                 executable="initial_pose_publisher.py",
