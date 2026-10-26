@@ -17,7 +17,7 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
-                        [FindPackageShare("patrol_sim_bringup"), "launch", "simulation", "simulation.launch.py"]
+                        [FindPackageShare("patrol_sim_bringup"), "launch", "simulation", "simulation_impl.launch.py"]
                     )
                 ),
                 launch_arguments={

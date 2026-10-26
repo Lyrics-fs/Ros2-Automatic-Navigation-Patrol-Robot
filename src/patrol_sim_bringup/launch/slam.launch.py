@@ -29,7 +29,7 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
-                        [FindPackageShare("patrol_sim_bringup"), "launch", "slam", "slam.launch.py"]
+                        [FindPackageShare("patrol_sim_bringup"), "launch", "slam", "slam_impl.launch.py"]
                     )
                 ),
                 launch_arguments={name: LaunchConfiguration(name) for name in names}.items(),

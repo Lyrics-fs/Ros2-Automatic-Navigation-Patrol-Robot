@@ -26,7 +26,7 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
-                        [FindPackageShare("patrol_sim_bringup"), "launch", "navigation", "navigation.launch.py"]
+                        [FindPackageShare("patrol_sim_bringup"), "launch", "navigation", "navigation_impl.launch.py"]
                     )
                 ),
                 launch_arguments={name: LaunchConfiguration(name) for name in names}.items(),

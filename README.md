@@ -233,6 +233,7 @@ ros2 launch patrol_sim_bringup slam.launch.py \
 ```bash
 source /opt/ros/humble/setup.zsh
 source install/setup.zsh
+export TURTLEBOT3_MODEL=burger
 ros2 run turtlebot3_teleop teleop_keyboard
 ```
 

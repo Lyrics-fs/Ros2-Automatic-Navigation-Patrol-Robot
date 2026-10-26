@@ -14,7 +14,7 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
-                        [FindPackageShare("patrol_sim_bringup"), "launch", "visualization", "display.launch.py"]
+                        [FindPackageShare("patrol_sim_bringup"), "launch", "visualization", "display_impl.launch.py"]
                     )
                 ),
                 launch_arguments={"use_rviz": LaunchConfiguration("use_rviz")}.items(),
