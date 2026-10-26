@@ -13,6 +13,10 @@ def generate_launch_description():
             [FindPackageShare("patrol_sim_bringup"), "maps", "slam_toolbox", "patrol_map.yaml"]
         ),
         "params_file": PathJoinSubstitution([FindPackageShare("turtlebot3_navigation2"), "param", "humble", "burger.yaml"]),
+        "planner": "navfn",
+        "planner_config_file": "",
+        "controller": "dwb",
+        "controller_config_file": "",
         "use_sim_time": "true",
         "autostart": "true",
         "use_rviz": "true",

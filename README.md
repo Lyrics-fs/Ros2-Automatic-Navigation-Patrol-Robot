@@ -21,6 +21,7 @@ Burger URDF、Gazebo SDF 和所需网格已复制到本项目并保留上游 Apa
 ├── src/
 │   ├── patrol_sim_bringup/         # 仿真、SLAM、Nav2 和地图资源
 │   │   ├── config/slam/            # 各 SLAM 后端参数
+│   │   ├── config/navigation/       # Nav2 及全局规划器配置
 │   │   ├── description/            # 项目内 Burger URDF 和可视网格
 │   │   ├── worlds/                 # Gazebo 世界文件
 │   │   ├── models/                 # Gazebo 模型及其网格资源
@@ -318,6 +319,42 @@ source /opt/ros/humble/setup.zsh
 source install/setup.zsh
 ros2 launch patrol_sim_bringup navigation.launch.py
 ```
+
+全局规划器通过 `planner` 参数选择，默认是 NavFn。项目提供 NavFn、Smac 2D、Smac Hybrid 和 Theta* 配置；局部控制器通过 `controller` 参数单独选择，默认是 DWB。Nav2 定位、代价地图和行为树仍使用 Burger 参数。切换全局规划器示例：
+
+```bash
+ros2 launch patrol_sim_bringup navigation.launch.py planner:=smac_2d
+ros2 launch patrol_sim_bringup navigation.launch.py planner:=theta_star
+ros2 launch patrol_sim_bringup navigation.launch.py planner:=smac_hybrid
+```
+
+各规划器的独立配置位于 `src/patrol_sim_bringup/config/navigation/planners/`。其中 Smac Hybrid 面向有最小转弯半径约束的运动模型；当前差速 Burger 更适合 NavFn、Smac 2D 或 Theta*。选择外部 Nav2 全局规划插件时，可提供包含 `planner_server.ros__parameters` 的自定义 YAML：
+
+```bash
+ros2 launch patrol_sim_bringup navigation.launch.py \
+  planner:=custom \
+  planner_config_file:=/绝对路径/my_global_planner.yaml
+```
+
+启动入口会把所选规划器配置合并进 Nav2 基础参数，并保留 BT 使用的 `GridBased` planner ID。若更换规划器插件包，请先安装该插件对应的 ROS 2 软件包。
+
+局部控制器也有独立配置，当前提供 DWB、Regulated Pure Pursuit 和 MPPI：
+
+```bash
+ros2 launch patrol_sim_bringup navigation.launch.py controller:=dwb
+ros2 launch patrol_sim_bringup navigation.launch.py controller:=regulated_pure_pursuit
+ros2 launch patrol_sim_bringup navigation.launch.py controller:=mppi
+```
+
+控制器 profile 位于 `src/patrol_sim_bringup/config/navigation/controllers/`。可使用 `controller_config_file` 加载自定义 Nav2 Controller 插件配置：
+
+```bash
+ros2 launch patrol_sim_bringup navigation.launch.py \
+  controller:=custom \
+  controller_config_file:=/绝对路径/my_controller.yaml
+```
+
+局部控制器根据全局路径、局部代价地图和底盘运动学计算 `/cmd_vel`。Burger 是差速底盘，默认 DWB 参数保持原样；Regulated Pure Pursuit 和 MPPI profile 也按差速底盘及其速度上限配置。切换控制器后，应在仿真中重新测试狭窄通道、急转弯、动态障碍和到点行为，再决定使用哪套参数。
 
 Nav2 启动后，项目会等待 AMCL 生命周期进入 active，再自动向 `/initialpose` 发布三次初始位姿。当前仿真固定出生点为 `x=-2.0, y=-0.5, yaw=0`，自动初始化默认使用这组地图坐标。地图文件本身不记录机器人出生位姿；如果修改 Gazebo 出生点或重新制作地图，需要确认机器人在地图中的实际坐标并同步调整初始位姿参数。AMCL 粒子云应收敛到机器人周围，TF 中应出现 `map -> odom -> base_footprint`。
 
