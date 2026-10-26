@@ -27,7 +27,7 @@ CAMERA_SENSOR = """
       <far>30</far>
     </clip>
   </camera>
-  <plugin name="burger_rgb_camera" filename="libgazebo_ros_camera.so">
+  <plugin name="robot_rgb_camera" filename="libgazebo_ros_camera.so">
     <camera_name>camera</camera_name>
     <frame_name>camera_optical_frame</frame_name>
   </plugin>
@@ -35,36 +35,44 @@ CAMERA_SENSOR = """
 """
 
 
-def burger_sdf_with_camera():
-    # 在官方模型的底盘链接上安装传感器，保留原有运动和雷达插件。
-    sdf_path = (
-        Path(get_package_share_directory("turtlebot3_gazebo"))
-        / "models"
-        / "turtlebot3_burger"
-        / "model.sdf"
-    )
+def robot_sdf_with_camera(sdf_file):
+    # 在任意包含 base_link 的模型上安装传感器，保留原有运动和雷达插件。
+    sdf_path = Path(sdf_file)
+    if not sdf_path.is_file():
+        raise RuntimeError(f"机器人 SDF 文件不存在：{sdf_path}")
     sdf = ET.parse(sdf_path).getroot()
     base_link = sdf.find("./model/link[@name='base_link']")
     if base_link is None:
-        raise RuntimeError("官方 Burger SDF 中未找到 base_link")
+        raise RuntimeError("机器人 SDF 中未找到 base_link")
     base_link.append(ET.fromstring(CAMERA_SENSOR))
     return ET.tostring(sdf, encoding="unicode")
 
 
 def main():
     rclpy.init()
-    node = Node("spawn_burger_camera")
+    node = Node("spawn_robot_camera")
     try:
         node.declare_parameter("x_pose", -2.0)
         node.declare_parameter("y_pose", -0.5)
+        node.declare_parameter("sdf_file", "")
+        node.declare_parameter("entity_name", "burger")
+        sdf_file = str(node.get_parameter("sdf_file").value)
+        entity_name = str(node.get_parameter("entity_name").value)
+        if not sdf_file:
+            sdf_file = str(
+                Path(get_package_share_directory("turtlebot3_gazebo"))
+                / "models"
+                / "turtlebot3_burger"
+                / "model.sdf"
+            )
         client = node.create_client(SpawnEntity, "/spawn_entity")
         if not client.wait_for_service(timeout_sec=30.0):
             node.get_logger().error("等待 /spawn_entity 超时，请检查 gzserver 是否正常运行")
             return 1
 
         request = SpawnEntity.Request()
-        request.name = "burger"
-        request.xml = burger_sdf_with_camera()
+        request.name = entity_name
+        request.xml = robot_sdf_with_camera(sdf_file)
         request.initial_pose.position.x = float(node.get_parameter("x_pose").value)
         request.initial_pose.position.y = float(node.get_parameter("y_pose").value)
         request.initial_pose.position.z = 0.01
@@ -73,13 +81,13 @@ def main():
         future = client.call_async(request)
         rclpy.spin_until_future_complete(node, future, timeout_sec=30.0)
         if not future.done() or future.exception() is not None:
-            node.get_logger().error("生成 Burger 机器人超时或失败")
+            node.get_logger().error("生成机器人超时或失败")
             return 1
         response = future.result()
         if not response.success:
-            node.get_logger().error(f"生成 Burger 机器人失败：{response.status_message}")
+            node.get_logger().error(f"生成机器人失败：{response.status_message}")
             return 1
-        node.get_logger().info("已生成带 RGB 相机的 Burger 机器人")
+        node.get_logger().info(f"已生成带 RGB 相机的机器人：{entity_name}")
         return 0
     finally:
         node.destroy_node()

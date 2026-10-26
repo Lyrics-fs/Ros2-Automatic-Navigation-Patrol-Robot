@@ -11,6 +11,16 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("model", default_value="burger"),
+            DeclareLaunchArgument(
+                "world",
+                default_value=PathJoinSubstitution(
+                    [FindPackageShare("patrol_sim_bringup"), "worlds", "turtlebot3_world.world"]
+                ),
+            ),
+            DeclareLaunchArgument("use_gui", default_value="true"),
+            DeclareLaunchArgument("robot_urdf_file", default_value=""),
+            DeclareLaunchArgument("robot_sdf_file", default_value=""),
+            DeclareLaunchArgument("entity_name", default_value=""),
             DeclareLaunchArgument("x_pose", default_value="-2.0"),
             DeclareLaunchArgument("y_pose", default_value="-0.5"),
             DeclareLaunchArgument("use_camera", default_value="true"),
@@ -22,9 +32,14 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     "model": LaunchConfiguration("model"),
+                    "world": LaunchConfiguration("world"),
+                    "use_gui": LaunchConfiguration("use_gui"),
                     "x_pose": LaunchConfiguration("x_pose"),
                     "y_pose": LaunchConfiguration("y_pose"),
                     "use_camera": LaunchConfiguration("use_camera"),
+                    "robot_urdf_file": LaunchConfiguration("robot_urdf_file"),
+                    "robot_sdf_file": LaunchConfiguration("robot_sdf_file"),
+                    "entity_name": LaunchConfiguration("entity_name"),
                 }.items(),
             ),
         ]

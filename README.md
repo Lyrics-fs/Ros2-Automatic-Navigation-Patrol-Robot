@@ -21,8 +21,9 @@
 ├── src/
 │   ├── patrol_sim_bringup/         # 仿真、SLAM、Nav2 和地图资源
 │   │   ├── config/slam/            # 各 SLAM 后端参数
+│   │   ├── worlds/                 # Gazebo 世界文件
 │   │   ├── launch/                 # 按功能分组的启动文件
-│   │   │   ├── simulation/         # Gazebo 仿真实现
+│   │   │   ├── simulation/         # 世界与机器人实现
 │   │   │   ├── navigation/         # Nav2 导航实现
 │   │   │   ├── slam/               # SLAM 调度器和算法适配器
 │   │   │   ├── visualization/      # RViz 模型显示实现
@@ -66,11 +67,51 @@ source install/setup.zsh
 ros2 launch patrol_sim_bringup simulation.launch.py
 ```
 
-项目启动文件默认选择 Burger，并沿用官方世界、机器人模型和运动插件；启动时会给 Burger 添加 RGB 相机。机器人默认放置在 `x=-2.0, y=-0.5`。可以用 `model`、`x_pose` 和 `y_pose` 覆盖模型与初始位置：
+项目启动文件默认选择 Burger，并使用项目内 `worlds/turtlebot3_world.world` 世界；机器人模型和运动插件仍来自官方 TurtleBot3 包，启动时会给 Burger 添加 RGB 相机。机器人默认放置在 `x=-2.0, y=-0.5`。可以用 `model`、`world`、`x_pose` 和 `y_pose` 覆盖模型、世界和初始位置：
 
 ```bash
 ros2 launch patrol_sim_bringup simulation.launch.py model:=burger x_pose:=0.0 y_pose:=0.0
 ```
+
+切换到其他世界文件：
+
+```bash
+ros2 launch patrol_sim_bringup simulation.launch.py \
+  world:=/绝对路径/其他世界.world
+```
+
+项目中的世界文件集中放在 `src/patrol_sim_bringup/worlds/`，新增 `.world` 文件后即可通过 `world:=...` 传入。世界、机器人模型和传感器启动参数彼此独立，替换世界时不需要修改机器人生成节点。
+
+也可以只启动 Gazebo 世界，不生成机器人：
+
+```bash
+ros2 launch patrol_sim_bringup world.launch.py
+```
+
+关闭 Gazebo 图形界面时：
+
+```bash
+ros2 launch patrol_sim_bringup world.launch.py use_gui:=false
+```
+
+机器人模型也可以独立于世界启动。先启动世界，再在另一个终端启动默认 Burger：
+
+```bash
+ros2 launch patrol_sim_bringup robot.launch.py
+```
+
+替换为自己的 URDF 和 SDF：
+
+```bash
+ros2 launch patrol_sim_bringup robot.launch.py \
+  model:=my_robot \
+  robot_urdf_file:=/绝对路径/my_robot.urdf \
+  robot_sdf_file:=/绝对路径/my_robot.sdf \
+  entity_name:=my_robot \
+  use_camera:=false
+```
+
+`simulation.launch.py` 仍然是世界和机器人的组合入口；`world.launch.py` 与 `robot.launch.py` 可以分别复用。`robot_urdf_file` 负责 TF 和机器人描述，`robot_sdf_file` 负责 Gazebo 中的实体和插件，两个文件可以来自同一个模型包，也可以分别指定。启用 `use_camera:=true` 时，SDF 需要包含 `base_link`，项目会在其上添加 RGB 相机插件和对应的 URDF 相机 TF。
 
 如需按原方式启动没有相机的 Burger，可以传入 `use_camera:=false`。其他 TurtleBot3 型号仍使用官方启动文件。
 

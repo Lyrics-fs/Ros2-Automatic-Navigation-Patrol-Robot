@@ -4,12 +4,12 @@ project(patrol_sim_bringup)
 find_package(ament_cmake REQUIRED)
 
 install(
-  DIRECTORY launch config rviz maps
+  DIRECTORY launch config maps rviz worlds
   DESTINATION share/${PROJECT_NAME}
 )
 
 install(
-  PROGRAMS scripts/initial_pose_publisher.py scripts/spawn_burger_camera.py
+  PROGRAMS scripts/initial_pose_publisher.py scripts/spawn_robot_camera.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
