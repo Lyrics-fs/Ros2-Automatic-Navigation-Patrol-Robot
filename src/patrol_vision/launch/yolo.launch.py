@@ -10,8 +10,8 @@ def generate_launch_description():
         [
             DeclareLaunchArgument(
                 "weights",
-                default_value="yolo11n.pt",
-                description="YOLO11n 权重文件路径；首次使用时可自动下载。",
+                default_value="models/yolo11n.pt",
+                description="YOLO11n 权重文件路径；首次使用时可自动下载到 models 目录。",
             ),
             DeclareLaunchArgument(
                 "image_topic",

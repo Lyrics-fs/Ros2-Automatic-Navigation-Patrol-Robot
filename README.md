@@ -9,9 +9,35 @@
 - 已选用 TurtleBot3 Burger 作为仿真底盘，并为仿真添加 RGB 相机。
 - `patrol_sim_bringup` 提供项目自己的模型显示和 Gazebo 仿真入口。
 - `patrol_vision` 提供基于 YOLO11n 的相机目标检测入口。
-- SLAM Toolbox 在线异步建图入口与 Burger 参数已加入。
+- SLAM 已拆分为公共调度器和算法适配器，默认使用 SLAM Toolbox，并预留 Cartographer、RTAB-Map 和外部启动文件接口。
 - 已加入基于保存地图的 Nav2 启动入口，准备验证 AMCL 定位与目标点导航。
 - 后续步骤：通过连续导航和动态障碍物测试调整 Nav2 参数，再实现巡逻点任务。
+
+## 目录结构
+
+```text
+.
+├── models/                         # 本地 AI 权重（*.pt 被 Git 忽略）
+├── src/
+│   ├── patrol_sim_bringup/         # 仿真、SLAM、Nav2 和地图资源
+│   │   ├── config/slam/            # 各 SLAM 后端参数
+│   │   ├── launch/                 # 按功能分组的启动文件
+│   │   │   ├── simulation/         # Gazebo 仿真实现
+│   │   │   ├── navigation/         # Nav2 导航实现
+│   │   │   ├── slam/               # SLAM 调度器和算法适配器
+│   │   │   ├── visualization/      # RViz 模型显示实现
+│   │   │   └── *.launch.py         # 稳定的公开启动入口
+│   │   ├── maps/                   # 栅格地图 YAML/PGM
+│   │   ├── rviz/                   # RViz 配置
+│   │   └── scripts/                # 仿真辅助节点
+│   └── patrol_vision/              # 相机和 YOLO 检测节点
+│       ├── launch/
+│       └── patrol_vision/
+├── requirements-vision.txt         # 视觉虚拟环境依赖
+└── README.md
+```
+
+`build/`、`install/`、`log/` 和 `.venv/` 是本地生成目录，不属于源代码。启动视觉节点前请从仓库根目录执行命令，这样默认的 `models/yolo11n.pt` 路径可以直接使用。
 
 ## 环境依赖
 
@@ -64,7 +90,7 @@ ros2 run tf2_ros tf2_echo base_link camera_optical_frame
 
 ## YOLO 图像识别
 
-项目使用 Ultralytics YOLO11n 进行通用目标检测。先安装系统 Python 的虚拟环境支持包；如果系统已经安装 `python3.10-venv`，可以跳过第一条命令：
+项目使用 Ultralytics YOLO11n 进行通用目标检测。模型文件统一放在根目录 `models/`，其中 `.pt` 权重不会提交到 Git。先安装系统 Python 的虚拟环境支持包；如果系统已经安装 `python3.10-venv`，可以跳过第一条命令：
 
 ```bash
 sudo apt install python3.10-venv
@@ -98,7 +124,7 @@ source install/setup.zsh
 ROS_LOG_DIR=/tmp/patrol_ros2_log ros2 launch patrol_sim_bringup simulation.launch.py
 ```
 
-在另一个终端使用同样的环境启动检测节点。第一次运行会下载 `yolo11n.pt`；模型文件会被 `.gitignore` 忽略：
+在另一个终端使用同样的环境启动检测节点。第一次运行会下载 `models/yolo11n.pt`；模型文件会被 `.gitignore` 忽略：
 
 ```bash
 cd /home/lyrics/Ros2-Automatic-Navigation-Patrol-Robot
@@ -108,7 +134,7 @@ source install/setup.zsh
 ROS_LOG_DIR=/tmp/patrol_ros2_log ros2 launch patrol_vision yolo.launch.py
 ```
 
-检测节点默认订阅 `/camera/image_raw`，发布以下话题：
+检测节点默认从 `models/yolo11n.pt` 加载权重；文件不存在时，Ultralytics 会按模型名尝试下载。检测节点默认订阅 `/camera/image_raw`，发布以下话题：
 
 ```text
 /perception/image_annotated   带检测框的图像
@@ -169,6 +195,38 @@ source /opt/ros/humble/setup.zsh
 source install/setup.zsh
 ros2 launch patrol_sim_bringup slam.launch.py
 ```
+
+`slam.launch.py` 是公开入口，实际调度器位于 `launch/slam/slam_impl.launch.py`。它只负责选择后端、传递传感器和 TF 参数，以及启动公共 RViz；算法节点分别位于 `launch/slam/slam_toolbox.launch.py`、`launch/slam/cartographer.launch.py` 和 `launch/slam/rtabmap.launch.py`。因此仿真、雷达话题、Nav2 和地图保存流程不需要随算法切换而修改。
+
+默认后端是 SLAM Toolbox，原有命令保持不变。也可以显式选择后端：
+
+```bash
+# 当前已配置好的默认流程
+ros2 launch patrol_sim_bringup slam.launch.py slam_backend:=slam_toolbox
+
+# Cartographer：需要先安装 cartographer_ros，并提供 Lua 配置
+ros2 launch patrol_sim_bringup slam.launch.py \
+  slam_backend:=cartographer \
+  cartographer_config_directory:=/opt/ros/humble/share/turtlebot3_cartographer/config \
+  cartographer_config_basename:=turtlebot3_lds_2d.lua
+
+# RTAB-Map：需要先安装 rtabmap_ros
+ros2 launch patrol_sim_bringup slam.launch.py \
+  slam_backend:=rtabmap \
+  rtabmap_params_file:=/绝对路径/rtabmap.yaml
+```
+
+如果使用自己的 Lua 文件，`cartographer_config_directory` 和 `cartographer_config_basename` 必须与文件实际位置一致。Cartographer 的坐标系名称由 Lua 文件中的 `map_frame`、`published_frame` 和 `odom_frame` 决定，应与公共接口参数保持一致。
+
+所有适配器遵循相同的公共接口：`scan_topic`、`map_frame`、`odom_frame`、`base_frame` 和 `use_sim_time`。如果要接入项目之外的 SLAM 流程，可以让自己的启动文件声明这些参数，然后使用：
+
+```bash
+ros2 launch patrol_sim_bringup slam.launch.py \
+  slam_backend:=external \
+  slam_launch_file:=/绝对路径/my_slam_adapter.launch.py
+```
+
+外部适配器只需要负责发布 `map -> odom`，并消费统一的激光和 TF 接口；公共 RViz、仿真和后续 Nav2 可以直接复用。更换算法时，优先新增或修改适配器及其参数文件，不要把算法节点写回 `slam.launch.py`。
 
 第三个终端启动键盘遥控，然后缓慢驾驶机器人探索环境；尽量覆盖走廊和房间，并适当回到已走过的区域形成闭环：
 

@@ -1,0 +1,16 @@
+rtabmap:
+  ros__parameters:
+    # 使用 Gazebo 发布的二维激光和轮式里程计进行建图。
+    subscribe_scan: true
+    subscribe_rgb: false
+    subscribe_depth: false
+    subscribe_stereo: false
+    frame_id: base_footprint
+    odom_frame_id: odom
+    map_frame_id: map
+    publish_tf: true
+    approx_sync: true
+    Reg/Strategy: 1
+    Grid/RangeMax: 12.0
+    Grid/CellSize: 0.05
+    RGBD/NeighborLinkRefining: false

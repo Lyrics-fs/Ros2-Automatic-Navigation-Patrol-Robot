@@ -11,7 +11,7 @@ from std_msgs.msg import String
 class YoloDetector(Node):
     def __init__(self):
         super().__init__("yolo_detector")
-        self.declare_parameter("weights", "yolo11n.pt")
+        self.declare_parameter("weights", "models/yolo11n.pt")
         self.declare_parameter("image_topic", "/camera/image_raw")
         self.declare_parameter("annotated_topic", "/perception/image_annotated")
         self.declare_parameter("detections_topic", "/perception/detections")
