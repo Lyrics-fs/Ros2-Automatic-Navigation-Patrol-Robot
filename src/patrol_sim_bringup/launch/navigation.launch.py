@@ -9,7 +9,9 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     names = {
-        "map": PathJoinSubstitution([FindPackageShare("patrol_sim_bringup"), "maps", "patrol_map.yaml"]),
+        "map": PathJoinSubstitution(
+            [FindPackageShare("patrol_sim_bringup"), "maps", "slam_toolbox", "patrol_map.yaml"]
+        ),
         "params_file": PathJoinSubstitution([FindPackageShare("turtlebot3_navigation2"), "param", "humble", "burger.yaml"]),
         "use_sim_time": "true",
         "autostart": "true",

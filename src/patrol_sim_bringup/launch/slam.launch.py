@@ -16,8 +16,10 @@ def generate_launch_description():
         "map_frame": "map",
         "odom_frame": "odom",
         "base_frame": "base_footprint",
-        "cartographer_config_directory": "",
-        "cartographer_config_basename": "",
+        "cartographer_config_directory": PathJoinSubstitution(
+            [FindPackageShare("patrol_sim_bringup"), "config", "slam", "cartographer"]
+        ),
+        "cartographer_config_basename": "turtlebot3_lds_2d.lua",
         "rtabmap_params_file": PathJoinSubstitution([FindPackageShare("patrol_sim_bringup"), "config", "slam", "rtabmap.yaml"]),
         "use_sim_time": "true",
         "use_rviz": "true",

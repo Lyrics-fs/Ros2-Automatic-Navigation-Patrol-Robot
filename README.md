@@ -27,7 +27,10 @@
 │   │   │   ├── slam/               # SLAM 调度器和算法适配器
 │   │   │   ├── visualization/      # RViz 模型显示实现
 │   │   │   └── *.launch.py         # 稳定的公开启动入口
-│   │   ├── maps/                   # 栅格地图 YAML/PGM
+│   │   ├── maps/                   # 按建图后端分类的栅格地图
+│   │   │   ├── slam_toolbox/       # SLAM Toolbox 地图
+│   │   │   ├── cartographer/       # Cartographer 地图
+│   │   │   └── rtabmap/            # RTAB-Map 地图
 │   │   ├── rviz/                   # RViz 配置
 │   │   └── scripts/                # 仿真辅助节点
 │   └── patrol_vision/              # 相机和 YOLO 检测节点
@@ -204,11 +207,9 @@ ros2 launch patrol_sim_bringup slam.launch.py
 # 当前已配置好的默认流程
 ros2 launch patrol_sim_bringup slam.launch.py slam_backend:=slam_toolbox
 
-# Cartographer：需要先安装 cartographer_ros，并提供 Lua 配置
+# Cartographer：需要先安装 cartographer_ros；默认使用项目内 Lua 配置
 ros2 launch patrol_sim_bringup slam.launch.py \
-  slam_backend:=cartographer \
-  cartographer_config_directory:=/opt/ros/humble/share/turtlebot3_cartographer/config \
-  cartographer_config_basename:=turtlebot3_lds_2d.lua
+  slam_backend:=cartographer
 
 # RTAB-Map：需要先安装 rtabmap_ros
 ros2 launch patrol_sim_bringup slam.launch.py \
@@ -216,7 +217,7 @@ ros2 launch patrol_sim_bringup slam.launch.py \
   rtabmap_params_file:=/绝对路径/rtabmap.yaml
 ```
 
-如果使用自己的 Lua 文件，`cartographer_config_directory` 和 `cartographer_config_basename` 必须与文件实际位置一致。Cartographer 的坐标系名称由 Lua 文件中的 `map_frame`、`published_frame` 和 `odom_frame` 决定，应与公共接口参数保持一致。
+项目已经复制官方 TurtleBot3 的 Lua 配置到 `src/patrol_sim_bringup/config/slam/cartographer/`，默认启动时会自动使用安装后的项目内配置。如果使用自己的 Lua 文件，再覆盖 `cartographer_config_directory` 和 `cartographer_config_basename`，并确保它们与文件实际位置一致。Cartographer 的坐标系名称由 Lua 文件中的 `map_frame`、`published_frame` 和 `odom_frame` 决定，应与公共接口参数保持一致。
 
 所有适配器遵循相同的公共接口：`scan_topic`、`map_frame`、`odom_frame`、`base_frame` 和 `use_sim_time`。如果要接入项目之外的 SLAM 流程，可以让自己的启动文件声明这些参数，然后使用：
 
@@ -240,10 +241,25 @@ ros2 run turtlebot3_teleop teleop_keyboard
 RViz 中应逐渐出现 `/map` 栅格地图，激光点云应与地图墙面基本重合。建图完成后在工作区根目录保存地图：
 
 ```bash
-ros2 run nav2_map_server map_saver_cli -f src/patrol_sim_bringup/maps/patrol_map
+ros2 run nav2_map_server map_saver_cli \
+  -f src/patrol_sim_bringup/maps/slam_toolbox/patrol_map
 ```
 
-命令成功后应生成 `patrol_map.yaml` 和 `patrol_map.pgm`。只有地图保存成功且几何轮廓合理，才算完成本阶段。
+命令成功后应生成 `maps/slam_toolbox/patrol_map.yaml` 和 `maps/slam_toolbox/patrol_map.pgm`。地图必须放在与生成它的 SLAM 后端对应的目录中；例如 Cartographer 地图放在 `maps/cartographer/`，RTAB-Map 地图放在 `maps/rtabmap/`。
+
+使用 Cartographer 建图时，保存到 Cartographer 专属目录：
+
+```bash
+ros2 run nav2_map_server map_saver_cli \
+  -f src/patrol_sim_bringup/maps/cartographer/cartographer_map
+```
+
+使用 RTAB-Map 建图时，保存到 RTAB-Map 专属目录：
+
+```bash
+ros2 run nav2_map_server map_saver_cli \
+  -f src/patrol_sim_bringup/maps/rtabmap/rtabmap_map
+```
 
 如果 Gazebo 中没有机器人，先检查仿真终端是否出现 `Spawn status: Successfully spawned entity`。若没有，检查 `ros2 service list | rg spawn_entity` 是否能看到 `/spawn_entity`，并确认 Gazebo server 没有提前退出。
 
@@ -251,7 +267,7 @@ RViz 报 `Frame [map] does not exist` 表示 SLAM 尚未发布 `map` 坐标系�
 
 ## Nav2 定位与导航
 
-先关闭 SLAM 建图和遥控节点，保留 Gazebo 仿真运行。新开终端启动 Nav2；默认使用本仓库保存的地图及 TurtleBot3 Humble Burger 参数：
+先关闭 SLAM 建图和遥控节点，保留 Gazebo 仿真运行。新开终端启动 Nav2；默认使用 `maps/slam_toolbox/patrol_map.yaml` 和 TurtleBot3 Humble Burger 参数：
 
 ```bash
 source /opt/ros/humble/setup.zsh
@@ -282,4 +298,11 @@ ros2 launch patrol_sim_bringup navigation.launch.py auto_initialize_pose:=false
 ros2 launch patrol_sim_bringup navigation.launch.py \
   map:=/绝对路径/其他地图.yaml \
   params_file:=/绝对路径/nav2参数.yaml
+```
+
+使用其他建图后端生成的地图时，显式指定对应文件，例如：
+
+```bash
+ros2 launch patrol_sim_bringup navigation.launch.py \
+  map:=/home/lyrics/Ros2-Automatic-Navigation-Patrol-Robot/src/patrol_sim_bringup/maps/cartographer/cartographer_map.yaml
 ```

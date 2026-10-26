@@ -27,7 +27,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "map",
                 default_value=PathJoinSubstitution(
-                    [project_share, "maps", "patrol_map.yaml"]
+                    [project_share, "maps", "slam_toolbox", "patrol_map.yaml"]
                 ),
                 description="已保存的栅格地图 YAML 文件。",
             ),

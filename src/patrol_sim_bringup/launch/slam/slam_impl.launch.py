@@ -124,12 +124,14 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "cartographer_config_directory",
-                default_value="",
-                description="Cartographer Lua 配置目录。",
+                default_value=PathJoinSubstitution(
+                    [package_share, "config", "slam", "cartographer"]
+                ),
+                description="Cartographer Lua 配置目录。默认使用项目内配置。",
             ),
             DeclareLaunchArgument(
                 "cartographer_config_basename",
-                default_value="",
+                default_value="turtlebot3_lds_2d.lua",
                 description="Cartographer Lua 配置文件名。",
             ),
             DeclareLaunchArgument(
