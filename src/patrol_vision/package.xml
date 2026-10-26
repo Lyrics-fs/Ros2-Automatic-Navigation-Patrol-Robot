@@ -2,7 +2,7 @@
 <package format="3">
   <name>patrol_vision</name>
   <version>0.1.0</version>
-  <description>基于 YOLO 的巡逻机器人图像目标检测节点。</description>
+  <description>支持多种模型后端的巡逻机器人图像感知节点。</description>
   <maintainer email="lyrics@example.com">Lyrics</maintainer>
   <license>Apache-2.0</license>
 

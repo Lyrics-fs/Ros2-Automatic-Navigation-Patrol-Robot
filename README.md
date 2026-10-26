@@ -138,7 +138,7 @@ ros2 run tf2_ros tf2_echo base_link camera_optical_frame
 
 ## YOLO 图像识别
 
-项目使用 Ultralytics YOLO11n 进行通用目标检测。模型文件统一放在根目录 `models/`，其中 `.pt` 权重不会提交到 Git。先安装系统 Python 的虚拟环境支持包；如果系统已经安装 `python3.10-venv`，可以跳过第一条命令：
+视觉节点将 ROS 图像收发与具体模型推理解耦。统一输入为 BGR 图像，后端返回类别、置信度、像素边界框和可选标注图；当前提供 Ultralytics YOLO 后端，后续可按同一接口加入 RT-DETR、分类、分割等模型。模型文件统一放在根目录 `models/`，其中 `.pt` 权重不会提交到 Git。先安装系统 Python 的虚拟环境支持包；如果系统已经安装 `python3.10-venv`，可以跳过第一条命令：
 
 ```bash
 sudo apt install python3.10-venv
@@ -179,10 +179,10 @@ cd /home/lyrics/Ros2-Automatic-Navigation-Patrol-Robot
 source .venv/bin/activate
 source /opt/ros/humble/setup.zsh
 source install/setup.zsh
-ROS_LOG_DIR=/tmp/patrol_ros2_log ros2 launch patrol_vision yolo.launch.py
+ROS_LOG_DIR=/tmp/patrol_ros2_log ros2 launch patrol_vision vision.launch.py backend:=yolo model_path:=models/yolo11n.pt
 ```
 
-检测节点默认从 `models/yolo11n.pt` 加载权重；文件不存在时，Ultralytics 会按模型名尝试下载。检测节点默认订阅 `/camera/image_raw`，发布以下话题：
+`vision.launch.py` 是通用入口，`backend` 选择推理后端，`model_path` 传递模型路径，`model_options` 以 JSON 对象形式传递后端专属设置。YOLO 后端默认订阅 `/camera/image_raw`，并发布以下话题。原有 `yolo.launch.py weights:=...` 用法仍然保留：
 
 ```text
 /perception/image_annotated   带检测框的图像
@@ -199,11 +199,13 @@ ros2 topic echo /perception/detections
 默认参数为 CPU、`416` 输入尺寸、`0.35` 置信度阈值和约 3 Hz 推理。可以按机器性能调整：
 
 ```bash
-ros2 launch patrol_vision yolo.launch.py \
+ros2 launch patrol_vision vision.launch.py backend:=yolo model_path:=models/yolo11n.pt \
   confidence_threshold:=0.45 image_size:=320 inference_hz:=2.0
 ```
 
 可以在 RViz 添加 **Image** 显示并选择 `/perception/image_annotated` 查看检测框。当前模型是 COCO 通用预训练模型，适合先验证人、椅子、瓶子等常见类别；识别火焰、烟雾、垃圾或项目自定义目标时，需要后续准备数据并微调模型。
+
+新增模型时，在 `patrol_vision/patrol_vision/` 中实现 `VisionBackend`：构造函数接收配置字典，`infer(image)` 返回 `InferenceResult`，其中每个 `Detection` 使用统一字段，坐标为输入图像像素坐标；若模型能生成可视化结果，可填写 `annotated_image`。之后在 `backend.py` 的 `create_backend()` 中注册名称，并在该后端内部惰性导入其推理依赖。这样 ROS 话题、消息时间戳和检测 JSON 不需要随模型变化。分类或分割等非检测任务若输出结构不同，应再扩展统一结果类型或单独定义任务接口，避免伪装成检测框。
 
 ## 单独查看机器人模型
 

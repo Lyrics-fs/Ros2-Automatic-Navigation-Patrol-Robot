@@ -50,11 +50,13 @@ def generate_launch_description():
             ),
             Node(
                 package="patrol_vision",
-                executable="yolo_detector",
+                executable="model_detector",
                 name="yolo_detector",
                 parameters=[
                     {
-                        "weights": LaunchConfiguration("weights"),
+                        "backend": "yolo",
+                        "model_path": LaunchConfiguration("weights"),
+                        "model_options": "{}",
                         "image_topic": LaunchConfiguration("image_topic"),
                         "annotated_topic": LaunchConfiguration("annotated_topic"),
                         "detections_topic": LaunchConfiguration("detections_topic"),

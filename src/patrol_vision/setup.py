@@ -19,10 +19,11 @@ setup(
     zip_safe=True,
     maintainer="Lyrics",
     maintainer_email="lyrics@example.com",
-    description="基于 YOLO 的巡逻机器人图像目标检测节点。",
+    description="支持多种模型后端的巡逻机器人图像感知节点。",
     license="Apache-2.0",
     entry_points={
         "console_scripts": [
+            "model_detector = patrol_vision.model_detector:main",
             "yolo_detector = patrol_vision.yolo_detector:main",
         ],
     },
