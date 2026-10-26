@@ -4,7 +4,7 @@ project(patrol_sim_bringup)
 find_package(ament_cmake REQUIRED)
 
 install(
-  DIRECTORY launch config maps rviz worlds
+  DIRECTORY description launch config maps models rviz worlds
   DESTINATION share/${PROJECT_NAME}
 )
 

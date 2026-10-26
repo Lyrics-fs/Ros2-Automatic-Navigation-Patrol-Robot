@@ -15,6 +15,14 @@ from launch_ros.actions import Node
 
 
 def _default_model_files(model):
+    if model == "burger":
+        project_share = Path(get_package_share_directory("patrol_sim_bringup"))
+        return (
+            project_share / "description" / "urdf" / "turtlebot3_burger.urdf",
+            project_share / "models" / "turtlebot3_burger" / "model.sdf",
+        )
+
+    # 其他 TurtleBot3 型号仍从官方资源包读取。
     gazebo_share = Path(get_package_share_directory("turtlebot3_gazebo"))
     return (
         gazebo_share / "urdf" / f"turtlebot3_{model}.urdf",

@@ -2,7 +2,7 @@
 
 本项目基于 ROS 2 Humble 和 Gazebo Classic，使用 TurtleBot3 Burger 搭建移动机器人自主导航与巡逻仿真，计划逐步完成 SLAM 建图、Nav2 定位与导航、巡逻点任务和 rosbag 实验复现。
 
-机器人 URDF、Gazebo 模型及仿真世界来自官方 `turtlebot3_description` 和 `turtlebot3_gazebo` ROS 包。本仓库通过启动文件组合这些资源，不复制或维护上游模型副本。
+Burger URDF、Gazebo SDF 和所需网格已复制到本项目并保留上游 Apache 2.0 许可信息；其他 TurtleBot3 型号仍可从官方 `turtlebot3_description` 和 `turtlebot3_gazebo` ROS 包加载。世界文件和机器人模型由不同启动入口管理。
 
 ## 当前进度
 
@@ -21,7 +21,9 @@
 ├── src/
 │   ├── patrol_sim_bringup/         # 仿真、SLAM、Nav2 和地图资源
 │   │   ├── config/slam/            # 各 SLAM 后端参数
+│   │   ├── description/            # 项目内 Burger URDF 和可视网格
 │   │   ├── worlds/                 # Gazebo 世界文件
+│   │   ├── models/                 # Gazebo 模型及其网格资源
 │   │   ├── launch/                 # 按功能分组的启动文件
 │   │   │   ├── simulation/         # 世界与机器人实现
 │   │   │   ├── navigation/         # Nav2 导航实现
@@ -38,6 +40,7 @@
 │       ├── launch/
 │       └── patrol_vision/
 ├── requirements-vision.txt         # 视觉虚拟环境依赖
+├── THIRD_PARTY_NOTICES.md          # 第三方模型资源许可说明
 └── README.md
 ```
 
@@ -67,7 +70,7 @@ source install/setup.zsh
 ros2 launch patrol_sim_bringup simulation.launch.py
 ```
 
-项目启动文件默认选择 Burger，并使用项目内 `worlds/turtlebot3_world.world` 世界；机器人模型和运动插件仍来自官方 TurtleBot3 包，启动时会给 Burger 添加 RGB 相机。机器人默认放置在 `x=-2.0, y=-0.5`。可以用 `model`、`world`、`x_pose` 和 `y_pose` 覆盖模型、世界和初始位置：
+项目启动文件默认选择项目内的 Burger URDF/SDF 和 `worlds/turtlebot3_world.world` 世界。Gazebo 插件仍使用已安装的 ROS 2 Gazebo 插件包；启动时会给 Burger 添加 RGB 相机。机器人默认放置在 `x=-2.0, y=-0.5`。可以用 `model`、`world`、`x_pose` 和 `y_pose` 覆盖模型、世界和初始位置：
 
 ```bash
 ros2 launch patrol_sim_bringup simulation.launch.py model:=burger x_pose:=0.0 y_pose:=0.0
@@ -113,7 +116,7 @@ ros2 launch patrol_sim_bringup robot.launch.py \
 
 `simulation.launch.py` 仍然是世界和机器人的组合入口；`world.launch.py` 与 `robot.launch.py` 可以分别复用。`robot_urdf_file` 负责 TF 和机器人描述，`robot_sdf_file` 负责 Gazebo 中的实体和插件，两个文件可以来自同一个模型包，也可以分别指定。启用 `use_camera:=true` 时，SDF 需要包含 `base_link`，项目会在其上添加 RGB 相机插件和对应的 URDF 相机 TF。
 
-如需按原方式启动没有相机的 Burger，可以传入 `use_camera:=false`。其他 TurtleBot3 型号仍使用官方启动文件。
+Burger 的模型文件位于 `src/patrol_sim_bringup/description/` 和 `src/patrol_sim_bringup/models/`，不再从系统 TurtleBot3 包读取。Gazebo 会通过 `GAZEBO_MODEL_PATH` 查找项目内 Burger 与 `turtlebot3_common` 网格。其他 TurtleBot3 型号仍可通过 `model:=waffle` 或 `model:=waffle_pi` 使用官方资源。也可以显式指定 `robot_urdf_file` 和 `robot_sdf_file` 来切换任意机器人描述。
 
 ### RGB 相机验收
 

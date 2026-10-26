@@ -60,7 +60,7 @@ def main():
         entity_name = str(node.get_parameter("entity_name").value)
         if not sdf_file:
             sdf_file = str(
-                Path(get_package_share_directory("turtlebot3_gazebo"))
+                Path(get_package_share_directory("patrol_sim_bringup"))
                 / "models"
                 / "turtlebot3_burger"
                 / "model.sdf"
